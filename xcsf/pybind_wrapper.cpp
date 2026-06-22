@@ -828,6 +828,41 @@ class XCS
     }
 
     /**
+     * @brief Returns a JSON formatted string representing the current match set.
+     * @param [in] condition Whether to return the condition.
+     * @param [in] action Whether to return the action.
+     * @param [in] prediction Whether to return the prediction.
+     * @return String encoded in json format.
+     */
+    const char *
+    json_mset_export(const bool condition, const bool action, const bool prediction)
+    {
+        if (xcs.mset.list != NULL) {
+            return clset_json_export(&xcs, &xcs.mset, condition, action,
+                                     prediction);
+        }
+        return "null";
+    }
+
+    /**
+     * @brief Returns a JSON formatted string representing the current action set.
+     * @param [in] condition Whether to return the condition.
+     * @param [in] action Whether to return the action.
+     * @param [in] prediction Whether to return the prediction.
+     * @return String encoded in json format.
+     */
+    const char *
+    json_aset_export(const bool condition, const bool action, const bool prediction)
+    {
+        if (xcs.aset.list != NULL) {
+            return clset_json_export(&xcs, &xcs.aset, condition, action,
+                                     prediction);
+        }
+        return "null";
+    }
+
+
+    /**
      * @brief Updates the Python object's parameter dictionary.
      */
     void
@@ -925,6 +960,20 @@ class XCS
     {
         clset_json_insert(&xcs, json_str.c_str());
     }
+
+    /**
+     * @brief Creates classifiers from JSON and replaces the current population with them.
+     * Don't call this if you want to just add classifiers! Use json_insert in that case.
+     * @param [in] json_str JSON formatted string representing classifiers.
+     */
+    void
+    json_replace(const std::string &json_str)
+    {
+        clset_kill(&xcs, &xcs.pset);
+        clset_init(&xcs.pset);
+        clset_json_insert(&xcs, json_str.c_str());
+    }
+
 
     /**
      * @brief Writes the current population set to a file in JSON.
@@ -1105,6 +1154,14 @@ PYBIND11_MODULE(xcsf, m)
              "Returns a JSON formatted string representing the population set.",
              py::arg("condition") = true, py::arg("action") = true,
              py::arg("prediction") = true)
+        .def("json_mset", &XCS::json_mset_export,
+            "Returns a JSON formatted string representing the match set.",
+             py::arg("condition") = true, py::arg("action") = true,
+             py::arg("prediction") = true)
+        .def("json_aset", &XCS::json_aset_export,
+            "Returns a JSON formatted string representing the action set.",
+             py::arg("condition") = true, py::arg("action") = true,
+             py::arg("prediction") = true)
         .def("json_write", &XCS::json_write,
              "Writes the current population set to a file in JSON.",
              py::arg("filename"))
@@ -1119,6 +1176,9 @@ PYBIND11_MODULE(xcsf, m)
              py::arg("json_str"))
         .def("json_insert", &XCS::json_insert,
              "Creates classifiers from JSON and inserts into the population.",
+             py::arg("json_str"))
+        .def("json_replace", &XCS::json_replace,
+             "Creates classifiers from JSON and replaces the current population with them.",
              py::arg("json_str"))
         .def("internal_params", &XCS::internal_params, "Gets internal params.")
         .def(py::pickle(
